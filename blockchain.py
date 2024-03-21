@@ -68,7 +68,7 @@ class Blockchain:
       print(f'{block}')
       print("\n-----------\n")
       
-      if block['previousHash'] != self.hash(lastBlock):
+      if block['previousHash'] != self.__hash__(lastBlock):
         return False
 
       if not self.validProof(lastBlock['proof'], block['proof']):
@@ -128,7 +128,7 @@ blockchain = Blockchain()
 @app.route('/nodes/register', methods=['POST'])
 def registerNodes():
   values = request.get_json()
-  
+  print(values)
   nodes = values.get('nodes')
   if nodes is None:
     return "Error: Please supply a valid list of nodes", 400
