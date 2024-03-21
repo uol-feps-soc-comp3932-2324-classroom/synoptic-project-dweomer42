@@ -1,8 +1,8 @@
 import hashlib
 import json
 from time import time
-from flask import Flask, jsonify
-from uuid import uuid
+from flask import Flask, jsonify, request
+from uuid import uuid4
 
 class Blockchain():
   def init(self):
@@ -30,6 +30,7 @@ class Blockchain():
     })
     return self.lastBlock['index'] + 1
   
+  @staticmethod
   def proofOfWork(self, lastProof):
     proof = 0
     while self.validProof(lastProof, proof) is False:
@@ -68,13 +69,42 @@ nodeId = str(uuid4()).replace('-', '')
 
 blockchain = Blockchain()
 
+# Calc PoW, add a transaction with 1 amount, add to chain
 @app.route('/mine', methods=['GET'])
 def mine():
-    return "We'll mine a new Block"
+    lastBlock = blockchain.lastBlock
+    lastProof = lastBlock['proof']
+    proof = blockchain.proofOfWork(lastProof)
+    # Sender = 0 so we've done it, recipent is nodeId, so us, amount = 1
+    blockchain.newTransaction("0",nodeId,1)
+    
+    previousHash = blockchain.__hash__(lastBlock)
+    block = blockchain.newBlock(proof,previousHash)
+    
+    # Inform the caller that we forged a new block
+    response = {
+      'message': "New Block Forged",
+        'index': block['index'],
+        'transactions': block['transactions'],
+        'proof': block['proof'],
+        'previous_hash': block['previous_hash'],
+    }
+    return jsonify(response) , 200
   
 @app.route('/transactions/new', methods=['POST'])
 def newTransaction():
-    return "We'll add a new transaction"
+    values = request.get_json()
+
+    # Check that the required fields are in the POST'ed data
+    required = ['sender', 'recipient', 'amount']
+    if not all(k in values for k in required):
+        return 'Missing values', 400
+
+    # Create a new Transaction
+    index = blockchain.newTransaction(values['sender'], values['recipient'], values['amount'])
+
+    response = {'message': f'Transaction will be added to Block {index}'}
+    return jsonify(response), 201
   
 @app.route('/chain', methods=['GET'])
 def fullChain():
