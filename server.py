@@ -3,11 +3,17 @@ from urllib.parse import urlparse
 import requests
 from multiprocessing import process
 import multiprocessing
+import time
 
 def mineBlock(port):
-    requests.get(f'http://localhost:{port}/mine')
-    response = requests.get(f'http://localhost:{port}/nodes/resolve')
-    #print(response.text)
+    startTime = time.time()
+    for i in range(0,10):
+        requests.get(f'http://localhost:{port}/mine')
+        response = requests.get(f'http://localhost:{port}/nodes/resolve')
+        
+    endTime = time.time()
+    return endTime - startTime
+    
 
 
 
