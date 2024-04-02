@@ -207,6 +207,13 @@ def fullChain():
     }
     return jsonify(response), 200
   
+@app.route('/blocks', methods=['GET'])
+def countBlocks():
+  response = {
+    'length' : len(blockchain.chain)
+  }
+  return jsonify(response), 200
+    
 if __name__ == '__main__':
     from argparse import ArgumentParser 
     
