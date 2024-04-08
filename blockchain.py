@@ -28,7 +28,7 @@ class Blockchain:
       'previousHash': previousHash or self.hash(self.chain[-1])
     }
     # Reset the current list of transactions
-    self.current_transactions = []
+    self.currentTransactions = []
     
     # Add the block to our chain
     self.chain.append(block)
@@ -37,12 +37,15 @@ class Blockchain:
 
   def newTransaction(self,sender,recipient,amount):
     # Adds a new transaction to the list of transactions
-    self.current_transactions.append({
+    self.currentTransactions.append({
       'sender': sender,
       'recipient': recipient,
       'amount': amount,
     })
     return self.lastBlock['index'] + 1
+  
+  def getTransactions(self):
+    return self.currentTransactions
   
   def proofOfWork(self, lastProof):
     proof = 0
@@ -206,6 +209,14 @@ def fullChain():
         'length': len(blockchain.chain),
     }
     return jsonify(response), 200
+  
+@app.route('/transactions/pending', methods=['GET'])
+def pendingTransactions():
+  transactions = blockchain.getTransactions()
+  response = {
+    'transactions' : transactions
+  }
+  return jsonify(response), 200
   
 @app.route('/blocks', methods=['GET'])
 def countBlocks():
