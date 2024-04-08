@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for n in {5000..5005};
+for n in {5100..5200};
 do
     python blockchain.py -p $n &
 done

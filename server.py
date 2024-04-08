@@ -7,10 +7,11 @@ import time
 
 def mineBlock(port):
     startTime = time.time()
-    for i in range(0,10):
+    for i in range(0,100):
         requests.get(f'http://localhost:{port}/mine')
-        response = requests.get(f'http://localhost:{port}/nodes/resolve')
+        #response = requests.get(f'http://localhost:{port}/nodes/resolve')
         
+    response = requests.get(f'http://localhost:{port}/nodes/resolve')
     endTime = time.time()
     return endTime - startTime
     
