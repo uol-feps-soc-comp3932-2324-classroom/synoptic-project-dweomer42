@@ -26,12 +26,14 @@ def generateRequestJson(startPort,endPort):
     for i in range(startPort,endPort):
         requestString = "http://localhost:" + str(i)
         requestArray.append(requestString)
-    payload = json.dumps({'nodes':requestArray})
+    #payload = json.dumps({'nodes':requestArray})
     myjson = {'nodes':requestArray}
     return myjson
 
 def registerPort(port,requestjson):
     response = requests.post(f'http://localhost:{port}/nodes/register', json=requestjson)
+    walletJson = {'wallet':5}
+    requests.post(f'http://localhost:{port}/wallet/set',json=walletJson)
     return response.status_code
 
 def register(startPort, endPort):

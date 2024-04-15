@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 from multiprocessing import process
 import multiprocessing
 import requests
+import random
 
 class Blockchain:
   def __init__(self):
@@ -40,6 +41,7 @@ class Blockchain:
   
   def setWallet(self, value):
     self.wallet = value
+    
 
   def newTransaction(self,sender,recipient,amount):
     # Adds a new transaction to the list of transactions
@@ -66,6 +68,11 @@ class Blockchain:
     guess = f'{lastProof}{proof}'.encode()
     hashedGuess = hashlib.sha256(guess).hexdigest()
     return hashedGuess[:4] == "0000"
+  
+  @staticmethod
+  def getNodeWallet(node):
+    response = requests.get("http://" + node + "/wallet/get")
+    return {'value': response.json()['value'], 'node':node}
   
   def validChain(self, chain):
     lastBlock = chain[0]
@@ -152,6 +159,25 @@ def registerNodes():
   
   return jsonify(response), 201
 
+@app.route('/nodes/validator', methods=['GET'])
+def selectValidator():
+  threads = len(blockchain.nodes)
+  pool = multiprocessing.Pool(processes=threads) 
+  #blockchain.getNodeWallet(blockchain.nodes[0])
+  outputs = pool.map(blockchain.getNodeWallet,blockchain.nodes)
+  cumulativeValues = outputs
+  for i in range(0,threads - 1):
+    cumulativeValues[i+1]['value'] = cumulativeValues[i+1]['value'] + cumulativeValues[i]['value']
+  selected = random.randint(0,cumulativeValues[-1]['value'])
+  chosenNodeIndex = 0
+  for i in range(0,threads):
+    if cumulativeValues[i]['value'] < selected:
+      nodeSelected = cumulativeValues[i]['node']
+      
+  #nodeSelected = list(blockchain.nodes)[chosenNodeIndex]
+  return f"selected node {nodeSelected} with random number {selected}" , 200
+  
+
 
 @app.route('/nodes/resolve', methods=['GET'])
 def consensus():
@@ -234,10 +260,12 @@ def countBlocks():
 @app.route('/wallet/set', methods=['POST'])
 def updateWalletValue():
   values = request.get_json()
+  #print(values)
   required = ['wallet']
   if not all(k in values for k in required):
         return 'Missing values', 400
-  blockchain.setWallet(values['wallet']) 
+  newWallet = values['wallet']
+  blockchain.setWallet(newWallet) 
   response = {'message': f'Wallet value updated to new value {blockchain.wallet}'}
   return jsonify(response), 200
 
