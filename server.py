@@ -8,10 +8,13 @@ import time
 def mineBlock(port):
     startTime = time.time()
     for i in range(0,100):
+        startMineTimer = time.time()
         requests.get(f'http://localhost:{port}/mine')
-        #response = requests.get(f'http://localhost:{port}/nodes/resolve')
+        response = requests.get(f'http://localhost:{port}/nodes/resolve')
+        endMineTimer = time.time()
+        print(endMineTimer - startMineTimer)
         
-    response = requests.get(f'http://localhost:{port}/nodes/resolve')
+    #response = requests.get(f'http://localhost:{port}/nodes/resolve')
     endTime = time.time()
     return endTime - startTime
     
@@ -58,7 +61,8 @@ if __name__ == '__main__':
   
     # map the function to the list and pass 
     # function and input list as arguments 
-    outputs = pool.map(mineBlock, inputs)
+    #outputs = pool.map(mineBlock, inputs)
+    outputs = mineBlock(5100)
 
     # Print output list 
     print("Output: {}".format(outputs))  
