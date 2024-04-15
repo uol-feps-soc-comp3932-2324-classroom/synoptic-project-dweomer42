@@ -242,6 +242,13 @@ def fullChain():
     }
     return jsonify(response), 200
   
+@app.route('/replace', methods=['POST'])
+def replaceChain():
+  response = request.json()
+  newChain = response['chain']
+  blockchain.chain = newChain
+  return "Succesfully replaced chain", 200
+  
 @app.route('/transactions/pending', methods=['GET'])
 def pendingTransactions():
   transactions = blockchain.getTransactions()
