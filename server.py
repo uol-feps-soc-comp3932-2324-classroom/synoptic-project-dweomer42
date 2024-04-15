@@ -2,6 +2,7 @@ import json
 from urllib.parse import urlparse
 import requests
 from multiprocessing import process
+from itertools import repeat
 import multiprocessing
 import time
 
@@ -19,9 +20,19 @@ def mineBlock(port):
     return endTime - startTime
     
 
+def generateRequestJson(startPort,endPort):
+    requestArray = []
+    # Register everything
+    for i in range(startPort,endPort):
+        requestString = "http://localhost:" + str(i)
+        requestArray.append(requestString)
+    payload = json.dumps({'nodes':requestArray})
+    myjson = {'nodes':requestArray}
+    return myjson
 
-
-
+def registerPort(port,requestjson):
+    response = requests.post(f'http://localhost:{port}/nodes/register', json=requestjson)
+    return response.status_code
 
 def register(startPort, endPort):
     requestArray = []
@@ -48,10 +59,8 @@ if __name__ == '__main__':
     startPort = args.startPort
     endPort = args.endPort
     shouldReg = args.register
-    if(shouldReg == True):
-        register(startPort,endPort)
-    # input list 
     inputs = range(startPort,endPort)
+    
     
     # multiprocessing pool object 
     pool = multiprocessing.Pool() 
@@ -59,11 +68,16 @@ if __name__ == '__main__':
     # pool object with number of element 
     pool = multiprocessing.Pool(processes=endPort-startPort) 
   
+    if(shouldReg == True):
+        jsonToReg = generateRequestJson(startPort,endPort)
+        #register(startPort,endPort)
+        outputs = pool.starmap(registerPort,zip(inputs,repeat(jsonToReg)))
+        print("Register Outputs: {}".format(outputs))
     # map the function to the list and pass 
     # function and input list as arguments 
     #outputs = pool.map(mineBlock, inputs)
-    outputs = mineBlock(5100)
+    #outputs = mineBlock(5100)
 
     # Print output list 
-    print("Output: {}".format(outputs))  
+    #print("Output: {}".format(outputs))  
     
