@@ -11,6 +11,7 @@ class Blockchain:
     self.chain = []
     self.currentTransactions = []
     self.nodes = set()
+    self.wallet = 0
 
     self.createBlock(previousHash=1,proof=100)
 
@@ -34,6 +35,9 @@ class Blockchain:
     self.chain.append(block)
     
     return block
+  
+  def setWallet(self, value):
+    self.wallet = value
 
   def newTransaction(self,sender,recipient,amount):
     # Adds a new transaction to the list of transactions
@@ -224,6 +228,26 @@ def countBlocks():
     'length' : len(blockchain.chain)
   }
   return jsonify(response), 200
+
+@app.route('/wallet/set', methods=['POST'])
+def updateWalletValue():
+  values = request.get_json()
+  required = ['wallet']
+  if not all(k in values for k in required):
+        return 'Missing values', 400
+  blockchain.setWallet(values['wallet']) 
+  response = {'message': f'Wallet value updated to new value {blockchain.wallet}'}
+  return jsonify(response), 200
+
+@app.route('/wallet/get', methods=['GET'])
+def getWalletValue():
+  response = {
+    'value' : blockchain.wallet
+  }
+  return jsonify(response),200
+  
+  
+  
     
 if __name__ == '__main__':
     from argparse import ArgumentParser 
