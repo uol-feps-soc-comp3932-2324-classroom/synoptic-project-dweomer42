@@ -254,6 +254,7 @@ def selectValidator():
     nodeSelected = cumulativeValues[0]['node']
   
   pool.starmap(blockchain.sendValidatorToNode,zip(blockchain.nodes,repeat(nodeSelected)))
+  requests.post("http://" + nodeSelected + "/synchronise")
   #nodeSelected = list(blockchain.nodes)[chosenNodeIndex]
   return f"selected node {nodeSelected} with random number {selected}" , 200
   
@@ -378,6 +379,13 @@ def fullChain():
         'length': len(blockchain.chain),
     }
     return jsonify(response), 200
+  
+@app.route('/synchronise', methods=['POST'])
+def synchronise():
+  threads = len(blockchain.nodes)
+  pool = multiprocessing.Pool(processes=threads) 
+  pool.map(blockchain.transmitChain,blockchain.nodes)
+  return "Synchronised successfully", 200
   
 @app.route('/replace', methods=['POST'])
 def replaceChain():
