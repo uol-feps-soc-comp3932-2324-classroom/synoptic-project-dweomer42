@@ -254,7 +254,7 @@ def selectValidator():
     nodeSelected = cumulativeValues[0]['node']
   
   pool.starmap(blockchain.sendValidatorToNode,zip(blockchain.nodes,repeat(nodeSelected)))
-  requests.post("http://" + nodeSelected + "/synchronise")
+  #requests.post("http://" + nodeSelected + "/synchronise")
   #nodeSelected = list(blockchain.nodes)[chosenNodeIndex]
   return f"selected node {nodeSelected} with random number {selected}" , 200
   
