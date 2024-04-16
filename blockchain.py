@@ -5,7 +5,7 @@ from flask import Flask, jsonify, request
 from uuid import uuid4
 from urllib.parse import urlparse
 from multiprocessing import process
-from pymerkle import InMemoryTree as MerkleTree
+from pymerkle import MerkleTree
 import multiprocessing
 import requests
 import random
@@ -26,7 +26,7 @@ class Blockchain:
   def createBlock(self,proof, previousHash=None):
     tree = MerkleTree(algorithm='sha256')
     for t in self.currentTransactions:
-      tree.append_entry(t)
+      tree.append_entry(json.dumps(t))
     
     # Creates a block and adds it to the chain
     block = {
@@ -35,7 +35,7 @@ class Blockchain:
       'transactions': self.currentTransactions,
       'proof': proof,
       'previousHash': previousHash or self.hash(self.chain[-1]),
-      'merkleRoot': tree.get_state()
+      'merkleRoot': tree.root
     }
     # Reset the current list of transactions
     self.currentTransactions = []
@@ -68,6 +68,16 @@ class Blockchain:
 
     return proof
   
+  @staticmethod
+  def checkMerkleRoot(block):
+    transactionList = block['transactions']
+    tree = MerkleTree(algorithm='sha256')
+    for transaction in transactionList:
+      tree.append_entry(json.dumps(transaction))
+    root = block['merkleRoot']
+    if root == tree.root:
+      return True
+    return False
   
   @staticmethod
   def validProof(lastProof, proof):
@@ -96,6 +106,9 @@ class Blockchain:
       if not self.validProof(lastBlock['proof'], block['proof']):
         return False
       
+      if self.checkMerkleRoot(block) == False:
+        return False
+      
       lastBlock = block
       currentIndex += 1
     return True
@@ -121,6 +134,9 @@ class Blockchain:
       return True
     
     return False
+  
+  def getChain(self):
+    return
     
 
   @staticmethod
@@ -222,6 +238,7 @@ def mine():
         'transactions': block['transactions'],
         'proof': block['proof'],
         'previous_hash': block['previousHash'],
+        'merkleRoot': block['merkleRoot'].hex()
     }
     return jsonify(response) , 200
   
