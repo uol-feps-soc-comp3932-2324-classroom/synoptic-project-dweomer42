@@ -5,6 +5,7 @@ from flask import Flask, jsonify, request
 from uuid import uuid4
 from urllib.parse import urlparse
 from multiprocessing import process
+from itertools import repeat
 from pymerkle import MerkleTree
 import multiprocessing
 import requests
@@ -16,6 +17,8 @@ class Blockchain:
     self.currentTransactions = []
     self.nodes = set()
     self.wallet = 0
+    self.validator = ""
+    self.validatorTimeout = 0
 
     self.createBlock(previousHash=1,proof=100)
 
@@ -94,6 +97,15 @@ class Blockchain:
   def getNodeWallet(node):
     response = requests.get("http://" + node + "/wallet/get")
     return {'value': response.json()['value'], 'node':node}
+  
+  @staticmethod
+  def sendValidatorToNode(node, validator):
+    requestJson = {
+      'validator':validator
+    }
+    response = requests.post("http://" + node + "/validator/update",json=requestJson)
+    return response
+    
   
   def validChain(self, chain):
     lastBlock = chain[0]
@@ -200,11 +212,17 @@ def selectValidator():
   for i in range(0,threads):
     if cumulativeValues[i]['value'] < selected:
       nodeSelected = cumulativeValues[i]['node']
-      
+  
+  pool.starmap(blockchain.sendValidatorToNode,zip(blockchain.nodes,repeat(nodeSelected)))
   #nodeSelected = list(blockchain.nodes)[chosenNodeIndex]
   return f"selected node {nodeSelected} with random number {selected}" , 200
   
-
+@app.route('/validator/update', methods=['POST'])
+def updateValidator():
+  myJson = request.json
+  newValidator = myJson['validator']
+  blockchain.validator = newValidator
+  blockchain.validatorTimeout = 5
 
 @app.route('/nodes/resolve', methods=['GET'])
 def consensus():
