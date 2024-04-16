@@ -5,6 +5,7 @@ from flask import Flask, jsonify, request
 from uuid import uuid4
 from urllib.parse import urlparse
 from multiprocessing import process
+from pymerkle import InMemoryTree as MerkleTree
 import multiprocessing
 import requests
 import random
@@ -23,13 +24,18 @@ class Blockchain:
     self.nodes.add(parsedUrl.netloc)
 
   def createBlock(self,proof, previousHash=None):
+    tree = MerkleTree(algorithm='sha256')
+    for t in self.currentTransactions:
+      tree.append_entry(t)
+    
     # Creates a block and adds it to the chain
     block = {
       'index': len(self.chain) + 1,
       'timestamp': time(),
       'transactions': self.currentTransactions,
       'proof': proof,
-      'previousHash': previousHash or self.hash(self.chain[-1])
+      'previousHash': previousHash or self.hash(self.chain[-1]),
+      'merkleRoot': tree.get_state()
     }
     # Reset the current list of transactions
     self.currentTransactions = []
