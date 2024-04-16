@@ -27,6 +27,11 @@ class Blockchain:
     tree = MerkleTree(algorithm='sha256')
     for t in self.currentTransactions:
       tree.append_entry(json.dumps(t))
+      
+    root = tree.root
+      
+    if tree.root:
+      root = tree.root.hex()
     
     # Creates a block and adds it to the chain
     block = {
@@ -35,7 +40,7 @@ class Blockchain:
       'transactions': self.currentTransactions,
       'proof': proof,
       'previousHash': previousHash or self.hash(self.chain[-1]),
-      'merkleRoot': tree.root
+      'merkleRoot': root
     }
     # Reset the current list of transactions
     self.currentTransactions = []
@@ -75,7 +80,7 @@ class Blockchain:
     for transaction in transactionList:
       tree.append_entry(json.dumps(transaction))
     root = block['merkleRoot']
-    if root == tree.root:
+    if root == tree.root.hex():
       return True
     return False
   
@@ -135,13 +140,13 @@ class Blockchain:
     
     return False
   
-  def getChain(self):
-    return
     
 
   @staticmethod
   def __hash__(block):
     # Hashes a block
+    # if block['merkleRoot']:
+    #   block['merkleRoot'] = block['merkleRoot'].hex()
     blockString = json.dumps(block, sort_keys=True).encode()
     return hashlib.sha256(blockString).hexdigest()
 
@@ -238,7 +243,7 @@ def mine():
         'transactions': block['transactions'],
         'proof': block['proof'],
         'previous_hash': block['previousHash'],
-        'merkleRoot': block['merkleRoot'].hex()
+        'merkleRoot': block['merkleRoot']
     }
     return jsonify(response) , 200
   
@@ -259,6 +264,12 @@ def newTransaction():
   
 @app.route('/chain', methods=['GET'])
 def fullChain():
+    # chain = []
+    # for block in blockchain.chain:
+    #   if block['merkleRoot']:
+    #     print(block['merkleRoot'])
+    #     block['merkleRoot'] = block['merkleRoot'].hex()
+    #   chain.append(json.dumps(block)) 
     response = {
         'chain': blockchain.chain,
         'length': len(blockchain.chain),
