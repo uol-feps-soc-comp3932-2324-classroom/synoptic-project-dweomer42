@@ -22,11 +22,11 @@ def mineBlockPoW(port):
 def mineBlockPos(port):
     requests.post("http://localhost:5100/synchronise")
     startTime = time.time()
-    for i in range(0,100):
+    for i in range(0,10):
         startMineTimer = time.time()
         requests.get(f'http://localhost:{port}/PoS/mine')
         endMineTimer = time.time()
-        print(endMineTimer - startMineTimer)
+        print(f"{i}:{endMineTimer - startMineTimer}")
         
     #response = requests.get(f'http://localhost:{port}/nodes/resolve')
     endTime = time.time()
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     #outputs = pool.map(mineBlockPos, inputs)
     #outputs = mineBlock(5100)
     totalTime = mineBlockPos(5100)
-    print(totalTime)
+    print(f"total:{totalTime}")
     # Print output list 
     #print("Output: {}".format(outputs))  
     
