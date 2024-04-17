@@ -330,7 +330,6 @@ def minePoS():
       'previous_hash': block['previousHash'],
       'merkleRoot': block['merkleRoot']
     } 
-    blockchain.wallet += 1
     return jsonify(response) , 200
   else:
     return "Unable to forge block, please try again", 400
@@ -354,6 +353,7 @@ def PoSValidate():
   pool = multiprocessing.Pool(processes=threads) 
   #blockchain.getNodeWallet(blockchain.nodes[0])
   pool.map(blockchain.transmitChain,blockchain.nodes)
+  blockchain.wallet += 1
   
   return "Chain valid, transmitting across network", 200
   
