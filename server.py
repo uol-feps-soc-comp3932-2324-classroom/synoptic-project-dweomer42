@@ -7,22 +7,25 @@ import multiprocessing
 import time
 
 def mineBlockPoW(port):
+    times = []
     startTime = time.time()
     for i in range(0,100):
         startMineTimer = time.time()
         requests.get(f'http://localhost:{port}/PoW/mine')
         response = requests.get(f'http://localhost:{port}/nodes/resolve')
         endMineTimer = time.time()
-        print(endMineTimer - startMineTimer)
+        #print(endMineTimer - startMineTimer)
+        times.append([endMineTimer - startMineTimer])
         
     #response = requests.get(f'http://localhost:{port}/nodes/resolve')
     endTime = time.time()
-    return endTime - startTime
+    times.append([endTime - startTime])
+    return times
 
 def mineBlockPos(port):
     requests.post("http://localhost:5100/synchronise")
     startTime = time.time()
-    for i in range(0,10):
+    for i in range(0,100):
         startMineTimer = time.time()
         requests.get(f'http://localhost:{port}/PoS/mine')
         endMineTimer = time.time()
@@ -90,10 +93,30 @@ if __name__ == '__main__':
         print("Register Outputs: {}".format(outputs))
     # map the function to the list and pass 
     # function and input list as arguments 
-    #outputs = pool.map(mineBlockPos, inputs)
+    
+    #START POW
+    # outputs = pool.map(mineBlockPoW, inputs)
+    # selected = 0
+    # fastestTotal = 10000000000
+    # for i in range (0,len(outputs)):
+    #     #print(outputs[i][-1][0])
+    #     if(outputs[i][-1][0] < fastestTotal):
+    #         fastestTotal = outputs[i][-1][0]
+    #         selected = i
+            
+    # for i in range (0, len(outputs[selected]) - 1):
+    #     print(f"{i}:{outputs[selected][i][0]}")
+        
+    # print(f"total:{outputs[selected][-1][0]}")
+    
+    # END POW
     #outputs = mineBlock(5100)
+    # START POS
+    pool.close()
     totalTime = mineBlockPos(5100)
     print(f"total:{totalTime}")
+    #END POS
     # Print output list 
     #print("Output: {}".format(outputs))  
+    
     

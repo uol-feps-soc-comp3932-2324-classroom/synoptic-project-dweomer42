@@ -246,14 +246,19 @@ def selectValidator():
     cumulativeValues[i+1]['value'] = cumulativeValues[i+1]['value'] + cumulativeValues[i]['value']
   selected = random.randint(0,cumulativeValues[-1]['value'])
 
-  for i in range(0,len(cumulativeValues)):
-    if cumulativeValues[i]['value'] < selected:
+  # initialise to the first value in the list
+  nodeSelected = cumulativeValues[0]['node']
+  
+  # find the range between which the random sample lies
+  for i in range(1,len(cumulativeValues)):
+    # If it's larger than the previous but smaller than the current than it's within the current node's set
+    if cumulativeValues[i - 1]['value'] < selected and cumulativeValues[i]['value'] > selected:
       nodeSelected = cumulativeValues[i]['node']
-      
-  if len(cumulativeValues) == 1:
-    nodeSelected = cumulativeValues[0]['node']
+      break
+
   
   pool.starmap(blockchain.sendValidatorToNode,zip(blockchain.nodes,repeat(nodeSelected)))
+  pool.close()
   #requests.post("http://" + nodeSelected + "/synchronise")
   #nodeSelected = list(blockchain.nodes)[chosenNodeIndex]
   return f"selected node {nodeSelected} with random number {selected}" , 200
@@ -353,6 +358,7 @@ def PoSValidate():
   pool = multiprocessing.Pool(processes=threads) 
   #blockchain.getNodeWallet(blockchain.nodes[0])
   pool.map(blockchain.transmitChain,blockchain.nodes)
+  pool.close()
   blockchain.wallet += 1
   
   return "Chain valid, transmitting across network", 200
@@ -385,6 +391,7 @@ def synchronise():
   threads = len(blockchain.nodes)
   pool = multiprocessing.Pool(processes=threads) 
   pool.map(blockchain.transmitChain,blockchain.nodes)
+  pool.close()
   return "Synchronised successfully", 200
   
 @app.route('/replace', methods=['POST'])
