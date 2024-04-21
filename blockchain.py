@@ -124,7 +124,7 @@ class Blockchain:
   def validProof(lastProof, proof):
     guess = f'{lastProof}{proof}'.encode()
     hashedGuess = hashlib.sha256(guess).hexdigest()
-    return hashedGuess[:4] == "0000"
+    return hashedGuess[:5] == "00000"
   
   @staticmethod
   def getNodeWallet(node):
