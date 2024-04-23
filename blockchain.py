@@ -131,6 +131,13 @@ class Blockchain:
     response = requests.get("http://" + node + "/wallet/get")
     return {'value': response.json()['value'], 'node':node}
   
+
+  def getAndValidateChain(self,node):
+    response = requests.get(f'http://{node}/chain')
+    if(self.validChain(response.json()['chain'])):
+      return response
+    return
+  
   @staticmethod
   def sendValidatorToNode(node, validator):
     requestJson = {
@@ -174,19 +181,25 @@ class Blockchain:
     
     maxLength = len(self.chain)
     
-    for node in neighbours:
-      response = requests.get(f'http://{node}/chain')
+    pool = multiprocessing.Pool()
+    allChains = pool.map(self.getAndValidateChain,neighbours)
+    
+    for response in allChains:
+      if not response:
+        continue
       if response.status_code == 200:
         length = response.json()['length']
         chain = response.json()['chain']
         
-        if length > maxLength and self.validChain(chain):
+        if length > maxLength:
           maxLength = length
           newChain = chain
     
     if newChain:
       self.chain = newChain
-      return True
+    
+    pool.map(self.transmitChain,blockchain.nodes)
+    pool.close()
     
     return False
   

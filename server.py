@@ -7,20 +7,10 @@ import multiprocessing
 import time
 
 def mineBlockPoW(port):
-    times = []
     startTime = time.time()
-    for i in range(0,100):
-        startMineTimer = time.time()
-        requests.get(f'http://localhost:{port}/PoW/mine')
-        response = requests.get(f'http://localhost:{port}/nodes/resolve')
-        endMineTimer = time.time()
-        #print(endMineTimer - startMineTimer)
-        times.append([endMineTimer - startMineTimer])
-        
-    #response = requests.get(f'http://localhost:{port}/nodes/resolve')
+    requests.get(f'http://localhost:{port}/PoW/mine')
     endTime = time.time()
-    times.append([endTime - startTime])
-    return times
+    return endTime - startTime
 
 def mineBlockPos(port):
     requests.post("http://localhost:5100/synchronise")
@@ -95,28 +85,33 @@ if __name__ == '__main__':
     # function and input list as arguments 
     
     #START POW
-    # outputs = pool.map(mineBlockPoW, inputs)
-    # selected = 0
-    # fastestTotal = 10000000000
-    # for i in range (0,len(outputs)):
-    #     #print(outputs[i][-1][0])
-    #     if(outputs[i][-1][0] < fastestTotal):
-    #         fastestTotal = outputs[i][-1][0]
-    #         selected = i
-            
-    # for i in range (0, len(outputs[selected]) - 1):
-    #     print(f"{i}:{outputs[selected][i][0]}")
+    total = 0
+    for i in range(0,100):
+        outputs = pool.map(mineBlockPoW, inputs)
+        selected = 0
+        fastestTime = 10000000000
+        for j in range (0,len(outputs)):
+            #print(outputs[i][-1][0])
+            if(outputs[j] < fastestTime):
+                fastestTime = outputs[j]
+                selected = j
+        startResolve = time.time()
+        response = requests.get(f'http://localhost:{startPort}/nodes/resolve')
+        endResolve = time.time()
+        print(f"{i}:{fastestTime + endResolve - startResolve}")
+        total = total + fastestTime + endResolve - startResolve
         
-    # print(f"total:{outputs[selected][-1][0]}")
+    print(f"total:{total}")
+    
     
     # END POW
     #outputs = mineBlock(5100)
     # START POS
-    pool.close()
-    totalTime = mineBlockPos(5100)
-    print(f"total:{totalTime}")
+    # totalTime = mineBlockPos(startPort)
+    # print(f"total:{totalTime}")
     #END POS
     # Print output list 
     #print("Output: {}".format(outputs))  
+    pool.close()
     
     
