@@ -124,12 +124,19 @@ class Blockchain:
   def validProof(lastProof, proof):
     guess = f'{lastProof}{proof}'.encode()
     hashedGuess = hashlib.sha256(guess).hexdigest()
-    return hashedGuess[:4] == "0000"
+    return hashedGuess[:5] == "00000"
   
   @staticmethod
   def getNodeWallet(node):
     response = requests.get("http://" + node + "/wallet/get")
     return {'value': response.json()['value'], 'node':node}
+  
+
+  def getAndValidateChain(self,node):
+    response = requests.get(f'http://{node}/chain')
+    if(self.validChain(response.json()['chain'])):
+      return response
+    return
   
   @staticmethod
   def sendValidatorToNode(node, validator):
@@ -174,19 +181,25 @@ class Blockchain:
     
     maxLength = len(self.chain)
     
-    for node in neighbours:
-      response = requests.get(f'http://{node}/chain')
+    pool = multiprocessing.Pool()
+    allChains = pool.map(self.getAndValidateChain,neighbours)
+    
+    for response in allChains:
+      if not response:
+        continue
       if response.status_code == 200:
         length = response.json()['length']
         chain = response.json()['chain']
         
-        if length > maxLength and self.validChain(chain):
+        if length > maxLength:
           maxLength = length
           newChain = chain
     
     if newChain:
       self.chain = newChain
-      return True
+    
+    pool.map(self.transmitChain,blockchain.nodes)
+    pool.close()
     
     return False
   
@@ -246,14 +259,19 @@ def selectValidator():
     cumulativeValues[i+1]['value'] = cumulativeValues[i+1]['value'] + cumulativeValues[i]['value']
   selected = random.randint(0,cumulativeValues[-1]['value'])
 
-  for i in range(0,len(cumulativeValues)):
-    if cumulativeValues[i]['value'] < selected:
+  # initialise to the first value in the list
+  nodeSelected = cumulativeValues[0]['node']
+  
+  # find the range between which the random sample lies
+  for i in range(1,len(cumulativeValues)):
+    # If it's larger than the previous but smaller than the current than it's within the current node's set
+    if cumulativeValues[i - 1]['value'] < selected and cumulativeValues[i]['value'] > selected:
       nodeSelected = cumulativeValues[i]['node']
-      
-  if len(cumulativeValues) == 1:
-    nodeSelected = cumulativeValues[0]['node']
+      break
+
   
   pool.starmap(blockchain.sendValidatorToNode,zip(blockchain.nodes,repeat(nodeSelected)))
+  pool.close()
   #requests.post("http://" + nodeSelected + "/synchronise")
   #nodeSelected = list(blockchain.nodes)[chosenNodeIndex]
   return f"selected node {nodeSelected} with random number {selected}" , 200
@@ -330,7 +348,6 @@ def minePoS():
       'previous_hash': block['previousHash'],
       'merkleRoot': block['merkleRoot']
     } 
-    blockchain.wallet += 1
     return jsonify(response) , 200
   else:
     return "Unable to forge block, please try again", 400
@@ -354,6 +371,8 @@ def PoSValidate():
   pool = multiprocessing.Pool(processes=threads) 
   #blockchain.getNodeWallet(blockchain.nodes[0])
   pool.map(blockchain.transmitChain,blockchain.nodes)
+  pool.close()
+  blockchain.wallet += 1
   
   return "Chain valid, transmitting across network", 200
   
@@ -385,6 +404,7 @@ def synchronise():
   threads = len(blockchain.nodes)
   pool = multiprocessing.Pool(processes=threads) 
   pool.map(blockchain.transmitChain,blockchain.nodes)
+  pool.close()
   return "Synchronised successfully", 200
   
 @app.route('/replace', methods=['POST'])

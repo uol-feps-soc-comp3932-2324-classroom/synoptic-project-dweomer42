@@ -8,21 +8,14 @@ import time
 
 def mineBlockPoW(port):
     startTime = time.time()
-    for i in range(0,100):
-        startMineTimer = time.time()
-        requests.get(f'http://localhost:{port}/PoW/mine')
-        response = requests.get(f'http://localhost:{port}/nodes/resolve')
-        endMineTimer = time.time()
-        print(endMineTimer - startMineTimer)
-        
-    #response = requests.get(f'http://localhost:{port}/nodes/resolve')
+    requests.get(f'http://localhost:{port}/PoW/mine')
     endTime = time.time()
     return endTime - startTime
 
 def mineBlockPos(port):
     requests.post("http://localhost:5100/synchronise")
     startTime = time.time()
-    for i in range(0,10):
+    for i in range(0,100):
         startMineTimer = time.time()
         requests.get(f'http://localhost:{port}/PoS/mine')
         endMineTimer = time.time()
@@ -90,10 +83,35 @@ if __name__ == '__main__':
         print("Register Outputs: {}".format(outputs))
     # map the function to the list and pass 
     # function and input list as arguments 
-    #outputs = pool.map(mineBlockPos, inputs)
+    
+    #START POW
+    total = 0
+    for i in range(0,100):
+        outputs = pool.map(mineBlockPoW, inputs)
+        selected = 0
+        fastestTime = 10000000000
+        for j in range (0,len(outputs)):
+            #print(outputs[i][-1][0])
+            if(outputs[j] < fastestTime):
+                fastestTime = outputs[j]
+                selected = j
+        startResolve = time.time()
+        response = requests.get(f'http://localhost:{startPort}/nodes/resolve')
+        endResolve = time.time()
+        print(f"{i}:{fastestTime + endResolve - startResolve}")
+        total = total + fastestTime + endResolve - startResolve
+        
+    print(f"total:{total}")
+    
+    
+    # END POW
     #outputs = mineBlock(5100)
-    totalTime = mineBlockPos(5100)
-    print(f"total:{totalTime}")
+    # START POS
+    # totalTime = mineBlockPos(startPort)
+    # print(f"total:{totalTime}")
+    #END POS
     # Print output list 
     #print("Output: {}".format(outputs))  
+    pool.close()
+    
     
