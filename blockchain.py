@@ -10,6 +10,7 @@ from pymerkle import MerkleTree
 import multiprocessing
 import requests
 import random
+from numba import jit
 
 class Blockchain:
   def __init__(self):
@@ -102,12 +103,30 @@ class Blockchain:
   def getTransactions(self):
     return self.currentTransactions
   
+  @jit
   def proofOfWork(self, lastProof):
     proof = 0
     while self.validProof(lastProof, proof) is False:
       proof += 1
 
     return proof
+  
+  @staticmethod
+  def calculateValidator(cumulativeValues):
+    for i in range(0,len(cumulativeValues) - 1):
+      cumulativeValues[i+1]['value'] = cumulativeValues[i+1]['value'] + cumulativeValues[i]['value']
+    selected = random.randint(0,cumulativeValues[-1]['value'])
+
+    # initialise to the first value in the list
+    nodeSelected = cumulativeValues[0]['node']
+  
+    # find the range between which the random sample lies
+    for i in range(1,len(cumulativeValues)):
+      # If it's larger than the previous but smaller than the current than it's within the current node's set
+      if cumulativeValues[i - 1]['value'] < selected and cumulativeValues[i]['value'] > selected:
+        nodeSelected = cumulativeValues[i]['node']
+        break
+    return nodeSelected
   
   @staticmethod
   def checkMerkleRoot(block):
@@ -120,7 +139,9 @@ class Blockchain:
       return True
     return False
   
+  
   @staticmethod
+  #@jit
   def validProof(lastProof, proof):
     guess = f'{lastProof}{proof}'.encode()
     hashedGuess = hashlib.sha256(guess).hexdigest()
@@ -153,7 +174,7 @@ class Blockchain:
     response = requests.post("http://" + node + "/replace",json=requestJson)
     return response
     
-  
+  #@jit
   def validChain(self, chain):
     lastBlock = chain[0]
     currentIndex = 1
@@ -175,6 +196,7 @@ class Blockchain:
       currentIndex += 1
     return True
 
+  #@jit
   def resolveConflicts(self):
     neighbours = self.nodes
     newChain = None
@@ -206,6 +228,7 @@ class Blockchain:
     
 
   @staticmethod
+  #@jit
   def __hash__(block):
     # Hashes a block
     # if block['merkleRoot']:
@@ -254,27 +277,14 @@ def selectValidator():
   pool = multiprocessing.Pool(processes=threads) 
   #blockchain.getNodeWallet(blockchain.nodes[0])
   outputs = pool.map(blockchain.getNodeWallet,blockchain.nodes)
-  cumulativeValues = outputs
-  for i in range(0,len(cumulativeValues) - 1):
-    cumulativeValues[i+1]['value'] = cumulativeValues[i+1]['value'] + cumulativeValues[i]['value']
-  selected = random.randint(0,cumulativeValues[-1]['value'])
-
-  # initialise to the first value in the list
-  nodeSelected = cumulativeValues[0]['node']
-  
-  # find the range between which the random sample lies
-  for i in range(1,len(cumulativeValues)):
-    # If it's larger than the previous but smaller than the current than it's within the current node's set
-    if cumulativeValues[i - 1]['value'] < selected and cumulativeValues[i]['value'] > selected:
-      nodeSelected = cumulativeValues[i]['node']
-      break
+  nodeSelected = blockchain.calculateValidator(outputs)
 
   
   pool.starmap(blockchain.sendValidatorToNode,zip(blockchain.nodes,repeat(nodeSelected)))
   pool.close()
   #requests.post("http://" + nodeSelected + "/synchronise")
   #nodeSelected = list(blockchain.nodes)[chosenNodeIndex]
-  return f"selected node {nodeSelected} with random number {selected}" , 200
+  return f"selected node {nodeSelected}" , 200
   
 @app.route('/validator/update', methods=['POST'])
 def updateValidator():
