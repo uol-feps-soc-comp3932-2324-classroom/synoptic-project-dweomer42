@@ -60,8 +60,8 @@ if __name__ == '__main__':
     from argparse import ArgumentParser 
     
     parser = ArgumentParser()
-    parser.add_argument('-s', '--startPort', default=5000, type=int, help='first port registered')
-    parser.add_argument('-e', '--endPort', default=5005, type=int, help='last port registered')
+    parser.add_argument('-s', '--startPort', default=5100, type=int, help='first port registered')
+    parser.add_argument('-e', '--endPort', default=5105, type=int, help='last port registered')
     parser.add_argument('-r', '--register', default=False, type=bool, help='set to true to register ports')
     args = parser.parse_args()
     startPort = args.startPort
@@ -83,35 +83,41 @@ if __name__ == '__main__':
         print("Register Outputs: {}".format(outputs))
     # map the function to the list and pass 
     # function and input list as arguments 
+    algorithm = ""
+    while(algorithm != "w" and algorithm != "s"):
+        print("Please enter \"w\" to use PoW or \"s\" to use PoS")
+        algorithm = input()
+        if algorithm != "w" and algorithm != "s":
+            print("invalid input")
     
+    if algorithm == "w":
     #START POW
-    total = 0
-    for i in range(0,100):
-        outputs = pool.map(mineBlockPoW, inputs)
-        selected = 0
-        fastestTime = 10000000000
-        for j in range (0,len(outputs)):
-            #print(outputs[i][-1][0])
-            if(outputs[j] < fastestTime):
-                fastestTime = outputs[j]
-                selected = j
-        startResolve = time.time()
-        response = requests.get(f'http://localhost:{startPort}/nodes/resolve')
-        endResolve = time.time()
-        print(f"{i}:{fastestTime + endResolve - startResolve}")
-        total = total + fastestTime + endResolve - startResolve
-        
-    print(f"total:{total}")
-    
-    
+        total = 0
+        for i in range(0,100):
+            outputs = pool.map(mineBlockPoW, inputs)
+            selected = 0
+            fastestTime = 10000000000
+            for j in range (0,len(outputs)):
+                #print(outputs[i][-1][0])
+                if(outputs[j] < fastestTime):
+                    fastestTime = outputs[j]
+                    selected = j
+            startResolve = time.time()
+            response = requests.get(f'http://localhost:{startPort}/nodes/resolve')
+            endResolve = time.time()
+            print(f"{i}:{fastestTime + endResolve - startResolve}")
+            total = total + fastestTime + endResolve - startResolve
+        print(f"total:{total}")
     # END POW
-    #outputs = mineBlock(5100)
+    
+   
+    if algorithm == "s":
     # START POS
-    # totalTime = mineBlockPos(startPort)
-    # print(f"total:{totalTime}")
+        totalTime = mineBlockPos(startPort)
+        print(f"total:{totalTime}")
     #END POS
-    # Print output list 
-    #print("Output: {}".format(outputs))  
+    
+    
     pool.close()
     
     
