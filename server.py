@@ -20,7 +20,7 @@ def mineBlockPoW(port):
 
 # This function is used to mine a block using PoS
 # It only needs to be run in serial since there is no need for blocks to race with this method
-def mineBlockPos(startPort,port):
+def mineBlockPos(port):
     # We first need to synchronise our chain so that each genesis block has the same timestamp
     requests.post(f"http://localhost:{port}/synchronise")
     # Start total timer
