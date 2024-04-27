@@ -399,6 +399,10 @@ def minePoS():
   if validBlockResponse.status_code == 200:
     # Empty the list of transactions on the node since our block has been accepted
     blockchain.currentTransactions = []
+    
+    # Reward the miner for successfully mining the block
+    blockchain.wallet += 1
+    
     # Inform the caller that we forged a new block
     response = {
       'message': "New Block Forged",
